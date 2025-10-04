@@ -38,6 +38,156 @@ function GUI.new()
     self.ContentFrame.Position = UDim2.new(0,50,0,40)
     self.ContentFrame.BackgroundColor3 = Color3.fromRGB(134,134,134)
     addCorner(self.ContentFrame)
+    local listLayout = Instance.new("UIListLayout", self.ContentFrame)
+    listLayout.Padding = UDim.new(0,5)
+
+    -- Tabframe
+    self.Tabframe = Instance.new("Frame", self.MainFrame)
+    self.Tabframe.Size = UDim2.new(0,32,0,102)
+    self.Tabframe.Position = UDim2.new(0,12,0,40)
+    self.Tabframe.BackgroundColor3 = Color3.fromRGB(133,133,133)
+    addCorner(self.Tabframe)
+    self.TabLayout = Instance.new("UIListLayout", self.Tabframe)
+    self.TabLayout.Padding = UDim.new(0,5)
+
+    self.Tabs = {}       -- store tab content frames
+    self.TabButtons = {} -- store tab buttons
+
+    return self
+end
+
+-- Title
+function GUI:Title()
+    local t = {}
+    t.Text = "Title"
+    function t:build(parent)
+        local frame = Instance.new("Frame", parent or self.MainFrame)
+        frame.Size = UDim2.new(0,310,0,28)
+        frame.Position = UDim2.new(0,8,0,6)
+        frame.BackgroundTransparency = 1
+        addCorner(frame)
+
+        local label = Instance.new("TextLabel", frame)
+        label.Size = UDim2.new(0,310,0,28)
+        label.Text = t.Text
+        label.TextXAlignment = Enum.TextXAlignment.Left
+        label.BackgroundTransparency = 0.4
+        label.BackgroundColor3 = Color3.fromRGB(133,133,133)
+        label.TextColor3 = Color3.fromRGB(255,255,255)
+        label.Font = Enum.Font.Cartoon
+        label.TextSize = 15
+        addCorner(label)
+    end
+    return t
+end
+
+-- Button
+function GUI:button()
+    local t = {}
+    t.Text = "Button"
+    t.Function = function() end
+    function t:build(parent)
+        parent = parent or self.ContentFrame
+        local btn = Instance.new("TextButton", parent)
+        btn.Size = UDim2.new(0.8,0,0,36)
+        btn.BackgroundColor3 = Color3.fromRGB(137,137,137)
+        btn.Text = t.Text
+        btn.TextColor3 = Color3.fromRGB(255,255,255)
+        btn.TextXAlignment = Enum.TextXAlignment.Left
+        btn.Font = Enum.Font.Cartoon
+        btn.TextSize = 18
+        addCorner(btn)
+        btn.MouseButton1Click:Connect(function() t.Function() end)
+    end
+    return t
+end
+
+-- Toggle
+function GUI:toggle()
+    local t = {}
+    t.Text = "Toggle"
+    t.Function1 = function() end
+    t.Function2 = function() end
+
+    function t:build(parent)
+        parent = parent or self.ContentFrame
+        local frame = Instance.new("Frame", parent)
+        frame.Size = UDim2.new(0.8,0,0,36)
+        frame.BackgroundColor3 = Color3.fromRGB(137,137,137)
+        addCorner(frame)
+
+        local label = Instance.new("TextLabel", frame)
+        label.Size = UDim2.new(0.8,0,1,0)
+        label.Position = UDim2.new(0,0,0,0)
+        label.Text = t.Text
+        label.TextXAlignment = Enum.TextXAlignment.Left
+        label.Font = Enum.Font.Cartoon
+        label.TextColor3 = Color3.fromRGB(255,255,255)
+        label.BackgroundTransparency = 1
+        label.TextSize = 18
+
+        local toggleBtn = Instance.new("TextButton", frame)
+        toggleBtn.Size = UDim2.new(0.2,0,1,0)
+        toggleBtn.Position = UDim2.new(0.8,0,0,0)
+        toggleBtn.BackgroundColor3 = Color3.fromRGB(255,0,0)
+        toggleBtn.Text = ""
+        addCorner(toggleBtn, UDim.new(1,0))
+
+        local state = false
+        toggleBtn.MouseButton1Click:Connect(function()
+            state = not state
+            toggleBtn.BackgroundColor3 = state and Color3.fromRGB(0,255,0) or Color3.fromRGB(255,0,0)
+            if state then t.Function1() else t.Function2() end
+        end)
+    end
+    return t
+end
+
+-- Tab
+function GUI:Tab()
+    local t = {}
+    t.Text = "Tab"
+    t.Content = nil
+
+    function t:build()
+        -- Create tab button inside Tabframe
+        local tabBtn = Instance.new("TextButton", self.Tabframe)
+        tabBtn.Size = UDim2.new(0,28,0,28)
+        tabBtn.Text = t.Text
+        tabBtn.BackgroundColor3 = Color3.fromRGB(160,160,160)
+        tabBtn.TextColor3 = Color3.fromRGB(255,255,255)
+        tabBtn.Font = Enum.Font.Cartoon
+        tabBtn.TextSize = 20
+        addCorner(tabBtn)
+
+        -- Create content frame for this tab
+        local content = Instance.new("ScrollingFrame", self.MainFrame)
+        content.Size = self.ContentFrame.Size
+        content.Position = self.ContentFrame.Position
+        content.BackgroundColor3 = self.ContentFrame.BackgroundColor3
+        content.Visible = false
+        addCorner(content)
+        local layout = Instance.new("UIListLayout", content)
+        layout.Padding = UDim.new(0,5)
+
+        self.Tabs[t.Text] = content
+        self.TabButtons[t.Text] = tabBtn
+        t.Content = content -- this allows buttons/toggles to be built inside this tab
+
+        tabBtn.MouseButton1Click:Connect(function()
+            for _, otherContent in pairs(self.Tabs) do
+                otherContent.Visible = false
+            end
+            content.Visible = true
+        end)
+    end
+    return t
+end
+
+return GUI    self.ContentFrame.Size = UDim2.new(0,270,0,102)
+    self.ContentFrame.Position = UDim2.new(0,50,0,40)
+    self.ContentFrame.BackgroundColor3 = Color3.fromRGB(134,134,134)
+    addCorner(self.ContentFrame)
     self.ListLayout = Instance.new("UIListLayout", self.ContentFrame)
     self.ListLayout.Padding = UDim.new(0,5)
 
