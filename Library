@@ -32,7 +32,7 @@ function GUI.new()
     self.MainFrame.BackgroundTransparency = 0.4
     addCorner(self.MainFrame)
 
-    -- ContentFrame (default)
+    -- Default ContentFrame
     self.ContentFrame = Instance.new("ScrollingFrame", self.MainFrame)
     self.ContentFrame.Size = UDim2.new(0,270,0,102)
     self.ContentFrame.Position = UDim2.new(0,50,0,40)
@@ -50,44 +50,45 @@ function GUI.new()
     self.TabLayout = Instance.new("UIListLayout", self.Tabframe)
     self.TabLayout.Padding = UDim.new(0,5)
 
-    self.Tabs = {} -- store content frames per tab
-    self.TabButtons = {} -- store tab buttons
+    self.Tabs = {}       -- Store content frames per tab
+    self.TabButtons = {} -- Store tab buttons
 
     return self
 end
 
--- Add Title
+-- Title
 function GUI:Title()
     local t = {}
     t.Text = "Title"
     function t:build(parent)
-        local TitleFrame = Instance.new("Frame", parent or self.MainFrame)
-        TitleFrame.Size = UDim2.new(0,310,0,28)
-        TitleFrame.Position = UDim2.new(0,8,0,6)
-        TitleFrame.BackgroundTransparency = 1
-        addCorner(TitleFrame)
+        local frame = Instance.new("Frame", parent or self.MainFrame)
+        frame.Size = UDim2.new(0,310,0,28)
+        frame.Position = UDim2.new(0,8,0,6)
+        frame.BackgroundTransparency = 1
+        addCorner(frame)
 
-        local TitleLabel = Instance.new("TextLabel", TitleFrame)
-        TitleLabel.Size = UDim2.new(0,310,0,28)
-        TitleLabel.Text = t.Text
-        TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
-        TitleLabel.BackgroundTransparency = 0.4
-        TitleLabel.BackgroundColor3 = Color3.fromRGB(133,133,133)
-        TitleLabel.TextColor3 = Color3.fromRGB(255,255,255)
-        TitleLabel.Font = Enum.Font.Cartoon
-        TitleLabel.TextSize = 15
-        addCorner(TitleLabel)
+        local label = Instance.new("TextLabel", frame)
+        label.Size = UDim2.new(0,310,0,28)
+        label.Text = t.Text
+        label.TextXAlignment = Enum.TextXAlignment.Left
+        label.BackgroundTransparency = 0.4
+        label.BackgroundColor3 = Color3.fromRGB(133,133,133)
+        label.TextColor3 = Color3.fromRGB(255,255,255)
+        label.Font = Enum.Font.Cartoon
+        label.TextSize = 15
+        addCorner(label)
     end
     return t
 end
 
--- Add Button
+-- Button
 function GUI:button()
     local t = {}
     t.Text = "Button"
     t.Function = function() end
     function t:build(parent)
-        local btn = Instance.new("TextButton", parent or self.ContentFrame)
+        parent = parent or self.ContentFrame
+        local btn = Instance.new("TextButton", parent)
         btn.Size = UDim2.new(0.8,0,0,36)
         btn.BackgroundColor3 = Color3.fromRGB(137,137,137)
         btn.Text = t.Text
@@ -101,7 +102,7 @@ function GUI:button()
     return t
 end
 
--- Add Toggle
+-- Toggle
 function GUI:toggle()
     local t = {}
     t.Text = "Toggle"
@@ -109,7 +110,8 @@ function GUI:toggle()
     t.Function2 = function() end
 
     function t:build(parent)
-        local frame = Instance.new("Frame", parent or self.ContentFrame)
+        parent = parent or self.ContentFrame
+        local frame = Instance.new("Frame", parent)
         frame.Size = UDim2.new(0.8,0,0,36)
         frame.BackgroundColor3 = Color3.fromRGB(137,137,137)
         addCorner(frame)
@@ -141,11 +143,14 @@ function GUI:toggle()
     return t
 end
 
--- Add Tab
+-- Tab
 function GUI:Tab()
     local t = {}
     t.Text = "Tab"
+    t.Content = nil
+
     function t:build()
+        -- Create tab button
         local tabBtn = Instance.new("TextButton", self.Tabframe)
         tabBtn.Size = UDim2.new(0,28,0,28)
         tabBtn.Text = t.Text
@@ -155,6 +160,7 @@ function GUI:Tab()
         tabBtn.TextSize = 20
         addCorner(tabBtn)
 
+        -- Create content frame for this tab
         local content = Instance.new("ScrollingFrame", self.MainFrame)
         content.Size = self.ContentFrame.Size
         content.Position = self.ContentFrame.Position
@@ -164,16 +170,18 @@ function GUI:Tab()
         local layout = Instance.new("UIListLayout", content)
         layout.Padding = UDim.new(0,5)
 
+        -- Assign to tab table
+        self.Tabs[t.Text] = content
+        self.TabButtons[t.Text] = tabBtn
+        t.Content = content -- allow buttons/toggles to be built inside this tab
+
+        -- Click tab button
         tabBtn.MouseButton1Click:Connect(function()
             for _, otherContent in pairs(self.Tabs) do
                 otherContent.Visible = false
             end
             content.Visible = true
         end)
-
-        self.Tabs[t.Text] = content
-        self.TabButtons[t.Text] = tabBtn
-        t.Content = content
     end
     return t
 end
