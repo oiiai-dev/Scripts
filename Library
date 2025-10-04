@@ -1,0 +1,162 @@
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local GUI = {}
+GUI.__index = GUI
+
+-- Helper function to create UICorner
+local function addCorner(obj, radius)
+    local corner = Instance.new("UICorner", obj)
+    corner.CornerRadius = radius or UDim.new(0,10)
+end
+
+function GUI.new()
+    local self = setmetatable({}, GUI)
+    
+    -- ScreenGui
+    self.ScreenGui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
+    self.ScreenGui.Name = "SimpleUI"
+    
+    -- SideFrame
+    self.SideFrame = Instance.new("Frame", self.ScreenGui)
+    self.SideFrame.Size = UDim2.new(0,350,0,180)
+    self.SideFrame.Position = UDim2.new(0,222,0,24)
+    self.SideFrame.BackgroundColor3 = Color3.fromRGB(110,110,110)
+    self.SideFrame.BackgroundTransparency = 0.4
+    addCorner(self.SideFrame)
+    
+    -- MainFrame
+    self.MainFrame = Instance.new("Frame", self.SideFrame)
+    self.MainFrame.Size = UDim2.new(0,326,0,158)
+    self.MainFrame.Position = UDim2.new(0,12,0,10)
+    self.MainFrame.BackgroundColor3 = Color3.fromRGB(170,170,170)
+    self.MainFrame.BackgroundTransparency = 0.4
+    addCorner(self.MainFrame)
+    
+    -- ContentFrame
+    self.ContentFrame = Instance.new("ScrollingFrame", self.MainFrame)
+    self.ContentFrame.Size = UDim2.new(0,270,0,102)
+    self.ContentFrame.Position = UDim2.new(0,50,0,40)
+    self.ContentFrame.BackgroundColor3 = Color3.fromRGB(134,134,134)
+    addCorner(self.ContentFrame)
+    
+    self.ListLayout = Instance.new("UIListLayout", self.ContentFrame)
+    self.ListLayout.Padding = UDim.new(0,5)
+    
+    -- Tabframe
+    self.Tabframe = Instance.new("Frame", self.MainFrame)
+    self.Tabframe.Size = UDim2.new(0,32,0,102)
+    self.Tabframe.Position = UDim2.new(0,12,0,40)
+    self.Tabframe.BackgroundColor3 = Color3.fromRGB(133,133,133)
+    addCorner(self.Tabframe)
+    
+    self.TabLayout = Instance.new("UIListLayout", self.Tabframe)
+    self.TabLayout.Padding = UDim.new(0,5)
+    
+    self.Tabs = {}
+    
+    return self
+end
+
+-- Button
+function GUI:button()
+    local t = {}
+    t.Text = "Button"
+    t.Function = function() end
+    
+    function t:build(parent)
+        local btn = Instance.new("TextButton", parent or self.ContentFrame)
+        btn.Size = UDim2.new(0.8,0,0,36)
+        btn.BackgroundColor3 = Color3.fromRGB(137,137,137)
+        btn.Text = t.Text
+        btn.TextColor3 = Color3.fromRGB(255,255,255)
+        btn.TextXAlignment = Enum.TextXAlignment.Left
+        btn.Font = Enum.Font.Cartoon
+        btn.TextSize = 18
+        Instance.new("UICorner", btn)
+        btn.MouseButton1Click:Connect(function() t.Function() end)
+    end
+    
+    return t
+end
+
+-- Toggle
+function GUI:toggle()
+    local t = {}
+    t.Text = "Toggle"
+    t.Function1 = function() end
+    t.Function2 = function() end
+    
+    function t:build(parent)
+        local frame = Instance.new("Frame", parent or self.ContentFrame)
+        frame.Size = UDim2.new(0.8,0,0,36)
+        frame.BackgroundColor3 = Color3.fromRGB(137,137,137)
+        Instance.new("UICorner", frame)
+        
+        local label = Instance.new("TextLabel", frame)
+        label.Size = UDim2.new(0.8,0,1,0)
+        label.Position = UDim2.new(0,0,0,0)
+        label.Text = t.Text
+        label.TextXAlignment = Enum.TextXAlignment.Left
+        label.Font = Enum.Font.Cartoon
+        label.TextColor3 = Color3.fromRGB(255,255,255)
+        label.BackgroundTransparency = 1
+        label.TextSize = 18
+        
+        local toggleBtn = Instance.new("TextButton", frame)
+        toggleBtn.Size = UDim2.new(0.2,0,1,0)
+        toggleBtn.Position = UDim2.new(0.8,0,0,0)
+        toggleBtn.BackgroundColor3 = Color3.fromRGB(255,0,0)
+        toggleBtn.Text = ""
+        Instance.new("UICorner", toggleBtn).CornerRadius = UDim.new(1,0)
+        
+        local state = false
+        toggleBtn.MouseButton1Click:Connect(function()
+            state = not state
+            toggleBtn.BackgroundColor3 = state and Color3.fromRGB(0,255,0) or Color3.fromRGB(255,0,0)
+            if state then t.Function1() else t.Function2() end
+        end)
+    end
+    
+    return t
+end
+
+-- Tab
+function GUI:Tab()
+    local t = {}
+    t.Text = "Tab"
+    
+    function t:build()
+        local tabBtn = Instance.new("TextButton", self.Tabframe)
+        tabBtn.Size = UDim2.new(0,28,0,28)
+        tabBtn.Text = t.Text
+        tabBtn.BackgroundColor3 = Color3.fromRGB(160,160,160)
+        tabBtn.TextColor3 = Color3.fromRGB(255,255,255)
+        tabBtn.Font = Enum.Font.Cartoon
+        tabBtn.TextSize = 20
+        Instance.new("UICorner", tabBtn).CornerRadius = UDim.new(0,10)
+        
+        local content = Instance.new("ScrollingFrame", self.MainFrame)
+        content.Size = self.ContentFrame.Size
+        content.Position = self.ContentFrame.Position
+        content.BackgroundColor3 = self.ContentFrame.BackgroundColor3
+        content.Visible = false
+        Instance.new("UICorner", content)
+        local layout = Instance.new("UIListLayout", content)
+        layout.Padding = UDim.new(0,5)
+        
+        tabBtn.MouseButton1Click:Connect(function()
+            for _, tabContent in pairs(self.Tabs) do
+                tabContent.Visible = false
+            end
+            content.Visible = true
+        end)
+        
+        self.Tabs[t.Text] = content
+        t.Content = content
+    end
+    
+    return t
+end
+
+return GUI
