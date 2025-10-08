@@ -529,4 +529,179 @@ Tab:AddToggle({
     end
 })
 
+-- Steal A Brainrot
+local StealTab = Window:MakeTab({
+    Name = "Steal A Brainrot",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+StealTab:AddSection({Name = "Script Hubs"})
+
+StealTab:AddButton({
+    Name = "Chili Hub",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/tienkhanh11/spicy/main/Chilli.lua"))()
+    end
+})
+
+StealTab:AddButton({
+    Name = "Float V1",
+    Callback = function()
+        loadstring(game:HttpGet("https://pastebin.com/raw/JWrZzHEN"))()
+    end
+})
+
+StealTab:AddButton({
+    Name = "Ringta UI",
+    Callback = function()
+        loadstring(game:HttpGet("https://api.luarmor.net/files/v3/loaders/4dfd8f97b48ec9c81706cb36a3f382d8.lua"))()
+    end
+})
+
+OrionLib:Init()                    task.wait(5)
+                end
+            end)
+        end
+    end
+})
+
+-- Auto Buy Seeds
+Tab:AddSection({Name = "Auto Buy Seeds"})
+local seeds = {
+    "Mango Seed","Carnivorous Plant Seed","Mr Carrot Seed","Tomatrio Seed","Grape Seed",
+    "Shroombino Seed","Cocotank Seed","Eggplant Seed","Watermelon Seed","Pumpkin Seed",
+    "Sunflower Seed","Strawberry Seed","Dragon Fruit Seed","Cactus Seed"
+}
+local seedToggles = {}
+local function startAutoBuySeed(seed)
+    task.spawn(function()
+        while seedToggles[seed] do
+            BuyItemRemote:FireServer(seed, true)
+            task.wait(0.5)
+        end
+    end)
+end
+for _, seed in ipairs(seeds) do
+    Tab:AddToggle({
+        Name = seed,
+        Default = false,
+        Callback = function(Value)
+            seedToggles[seed] = Value
+            if Value then startAutoBuySeed(seed) end
+        end
+    })
+end
+
+-- Auto Buy Gears
+Tab:AddSection({Name = "Gears"})
+local gears = {"Water Bucket","Banana Gun","Frost Blower","Carrot Launcher","Frost Grenade"}
+local gearToggles = {}
+local function startAutoBuyGear(gear)
+    task.spawn(function()
+        while gearToggles[gear] do
+            BuyGearRemote:FireServer(gear, true)
+            task.wait(0.5)
+        end
+    end)
+end
+for _, gear in ipairs(gears) do
+    Tab:AddToggle({
+        Name = gear,
+        Default = false,
+        Callback = function(Value)
+            gearToggles[gear] = Value
+            if Value then startAutoBuyGear(gear) end
+        end
+    })
+end
+
+-- Auto Bat
+Tab:AddSection({Name = "Auto Attack"})
+
+local function findNearestBrainrot()
+    local player = Players.LocalPlayer
+    local character = player.Character
+    if not character or not character:FindFirstChild("HumanoidRootPart") then return nil end
+    local rootPos = character.HumanoidRootPart.Position
+    local nearest, shortest = nil, math.huge
+    for _, brainrot in ipairs(BrainrotsFolder:GetChildren()) do
+        local pos
+        if brainrot:IsA("BasePart") then
+            pos = brainrot.Position
+        elseif brainrot.PrimaryPart then
+            pos = brainrot.PrimaryPart.Position
+        end
+        if pos then
+            local dist = (rootPos - pos).Magnitude
+            if dist < shortest then
+                shortest = dist
+                nearest = brainrot
+            end
+        end
+    end
+    return nearest
+end
+
+local function hasClearPath(fromPos, toPos, target)
+    local params = RaycastParams.new()
+    params.FilterType = Enum.RaycastFilterType.Blacklist
+    params.FilterDescendantsInstances = {Players.LocalPlayer.Character}
+    local result = workspace:Raycast(fromPos, (toPos - fromPos).Unit * (toPos - fromPos).Magnitude, params)
+    if result then
+        return result.Instance:IsDescendantOf(target)
+    else
+        return true
+    end
+end
+
+local autoBat = false
+Tab:AddToggle({
+    Name = "Auto Bat Nearest Brainrot (Walk + Auto Equip)",
+    Default = false,
+    Callback = function(Value)
+        autoBat = Value
+        if Value then
+            task.spawn(function()
+                task.wait(2)
+                while autoBat do
+                    local player = Players.LocalPlayer
+                    local character = player.Character
+                    if not character or not character:FindFirstChild("HumanoidRootPart") or not character:FindFirstChild("Humanoid") then
+                        task.wait(0.5)
+                        continue
+                    end
+                    local humanoid = character:FindFirstChild("Humanoid")
+                    local hrp = character.HumanoidRootPart
+
+                    -- Auto equip "Basic Bat"
+                    local backpack = player:FindFirstChild("Backpack")
+                    if backpack and backpack:FindFirstChild("Basic Bat") and not character:FindFirstChild("Basic Bat") then
+                        humanoid:EquipTool(backpack:FindFirstChild("Basic Bat"))
+                    end
+
+                    local nearestBrainrot = findNearestBrainrot()
+                    if nearestBrainrot then
+                        local tool = character:FindFirstChild("Basic Bat")
+                        while autoBat and nearestBrainrot.Parent do
+                            local targetPos = nearestBrainrot:IsA("BasePart") and nearestBrainrot.Position or nearestBrainrot.PrimaryPart.Position
+                            
+                            humanoid.WalkSpeed = 50
+                            humanoid:MoveTo(targetPos)
+
+                            if tool and hasClearPath(hrp.Position, targetPos, nearestBrainrot) then
+                                tool:Activate()
+                            end
+
+                            task.wait(0.1)
+                        end
+                    else
+                        task.wait(0.5)
+                    end
+                end
+            end)
+        end
+    end
+})
+
 OrionLib:Init()
