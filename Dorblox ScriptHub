@@ -5,7 +5,6 @@ local RemotesFolder = ReplicatedStorage:WaitForChild("Remotes")
 local BuyItemRemote = RemotesFolder:WaitForChild("BuyItem")
 local BuyGearRemote = RemotesFolder:WaitForChild("BuyGear")
 local EquipBestRemote = RemotesFolder:WaitForChild("EquipBestBrainrots")
-local UseItemRemote = RemotesFolder:WaitForChild("UseItem")
 local TweenService = game:GetService("TweenService")
 local BrainrotsFolder = workspace:WaitForChild("ScriptedMap"):WaitForChild("Brainrots")
 
@@ -16,16 +15,15 @@ local Window = OrionLib:MakeWindow({
     ConfigFolder = "DorbloxHub"
 })
 
-local Tab = Window:MakeTab({
-    Name = "Plants Vs Brainrots",
+-- Auto Collect Tab
+local CollectTab = Window:MakeTab({
+    Name = "Auto Collect",
     Icon = "rbxassetid://4483345998",
     PremiumOnly = false
 })
 
--- Auto Collect
-Tab:AddSection({Name = "Auto Collect"})
 local autoCollect = false
-Tab:AddToggle({
+CollectTab:AddToggle({
     Name = "Auto Collect Money",
     Default = false,
     Callback = function(Value)
@@ -35,6 +33,239 @@ Tab:AddToggle({
                 while autoCollect do
                     EquipBestRemote:FireServer()
                     task.wait(5)
+                end
+            end)
+        end
+    end
+})
+
+-- Auto Buy Seeds Tab
+local SeedsTab = Window:MakeTab({
+    Name = "Auto Buy Seeds",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+local seeds = {
+    "Mango Seed","Carnivorous Plant Seed","Mr Carrot Seed","Tomatrio Seed","Grape Seed",
+    "Shroombino Seed","Cocotank Seed","Eggplant Seed","Watermelon Seed","Pumpkin Seed",
+    "Sunflower Seed","Strawberry Seed","Dragon Fruit Seed","Cactus Seed"
+}
+local seedToggles = {}
+local function startAutoBuySeed(seed)
+    task.spawn(function()
+        while seedToggles[seed] do
+            BuyItemRemote:FireServer(seed, true)
+            task.wait(0.5)
+        end
+    end)
+end
+for _, seed in ipairs(seeds) do
+    SeedsTab:AddToggle({
+        Name = seed,
+        Default = false,
+        Callback = function(Value)
+            seedToggles[seed] = Value
+            if Value then startAutoBuySeed(seed) end
+        end
+    })
+end
+
+-- Auto Buy Gears Tab
+local GearsTab = Window:MakeTab({
+    Name = "Auto Buy Gears",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+local gears = {"Water Bucket","Banana Gun","Frost Blower","Carrot Launcher","Frost Grenade"}
+local gearToggles = {}
+local function startAutoBuyGear(gear)
+    task.spawn(function()
+        while gearToggles[gear] do
+            BuyGearRemote:FireServer(gear, true)
+            task.wait(0.5)
+        end
+    end)
+end
+for _, gear in ipairs(gears) do
+    GearsTab:AddToggle({
+        Name = gear,
+        Default = false,
+        Callback = function(Value)
+            gearToggles[gear] = Value
+            if Value then startAutoBuyGear(gear) end
+        end
+    })
+end
+
+-- Auto Attack Tab
+local AttackTab = Window:MakeTab({
+    Name = "Auto Attack",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+local function findNearestBrainrot()
+    local player = Players.LocalPlayer
+    local character = player.Character
+    if not character or not character:FindFirstChild("HumanoidRootPart") then return nil end
+    local rootPos = character.HumanoidRootPart.Position
+    local nearest, shortest = nil, math.huge
+    for _, brainrot in ipairs(BrainrotsFolder:GetChildren()) do
+        local pos
+        if brainrot:IsA("BasePart") then
+            pos = brainrot.Position
+        elseif brainrot.PrimaryPart then
+            pos = brainrot.PrimaryPart.Position
+        end
+        if pos then
+            local dist = (rootPos - pos).Magnitude
+            if dist < shortest then
+                shortest = dist
+                nearest = brainrot
+            end
+        end
+    end
+    return nearest
+end
+
+local autoBat = false
+AttackTab:AddToggle({
+    Name = "Auto Bat Nearest Brainrot (Walk + Auto Equip)",
+    Default = false,
+    Callback = function(Value)
+        autoBat = Value
+        if Value then
+            task.spawn(function()
+                task.wait(2)
+                while autoBat do
+                    local player = Players.LocalPlayer
+                    local character = player.Character
+                    if not character or not character:FindFirstChild("HumanoidRootPart") or not character:FindFirstChild("Humanoid") then
+                        task.wait(0.5)
+                        continue
+                    end
+                    local humanoid = character:FindFirstChild("Humanoid")
+                    local hrp = character.HumanoidRootPart
+
+                    -- Auto equip "Basic Bat"
+                    local backpack = player:FindFirstChild("Backpack")
+                    if backpack and backpack:FindFirstChild("Basic Bat") and not character:FindFirstChild("Basic Bat") then
+                        humanoid:EquipTool(backpack:FindFirstChild("Basic Bat"))
+                    end
+
+                    local nearestBrainrot = findNearestBrainrot()
+                    if nearestBrainrot then
+                        local tool = character:FindFirstChild("Basic Bat")
+                        while autoBat and nearestBrainrot.Parent do
+                            local targetPos = nearestBrainrot:IsA("BasePart") and nearestBrainrot.Position or nearestBrainrot.PrimaryPart.Position
+                            
+                            humanoid.WalkSpeed = 50
+                            humanoid:MoveTo(targetPos)
+
+                            if tool then
+                                tool:Activate()
+                            end
+
+                            task.wait(0.1)
+                        end
+                    else
+                        task.wait(0.5)
+                    end
+                end
+            end)
+        end
+    end
+})
+
+-- Event Tab
+local EventTab = Window:MakeTab({
+    Name = "Event",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+EventTab:AddSection({Name = "Auto Event"})
+
+local autoEvent = false
+local teleportCFrame = CFrame.new(-173.38674926757812, 12.482399940490723, 1004.2269897460938)
+
+EventTab:AddToggle({
+    Name = "Auto Event",
+    Default = false,
+    Callback = function(Value)
+        autoEvent = Value
+        if Value then
+            task.spawn(function()
+                while autoEvent do
+                    local player = Players.LocalPlayer
+                    local character = player.Character
+                    if character and character:FindFirstChild("HumanoidRootPart") then
+                        character.HumanoidRootPart.CFrame = teleportCFrame
+                        local args = {"TurnIn"}
+                        ReplicatedStorage.Remotes.Events.Prison.Interact:FireServer(unpack(args))
+                    end
+                    task.wait(3)
+                end
+            end)
+        end
+    end
+})
+
+-- Misc Tab
+local MiscTab = Window:MakeTab({
+    Name = "Misc",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+local humanoid = Players.LocalPlayer.Character:WaitForChild("Humanoid")
+local defaultSpeed = humanoid.WalkSpeed
+local defaultJump = humanoid.JumpPower
+local defaultGravity = workspace.Gravity
+
+MiscTab:AddSlider({
+    Name = "Set Speed",
+    Min = 1,
+    Max = 500,
+    Default = defaultSpeed,
+    Color = Color3.fromRGB(0,255,0),
+    Increment = 1,
+    ValueName = "Speed",
+    Callback = function(Value)
+        humanoid.WalkSpeed = Value
+    end
+})
+
+MiscTab:AddSlider({
+    Name = "Set Jump Power",
+    Min = 1,
+    Max = 1000,
+    Default = defaultJump,
+    Color = Color3.fromRGB(0,255,0),
+    Increment = 1,
+    ValueName = "JumpPower",
+    Callback = function(Value)
+        humanoid.JumpPower = Value
+    end
+})
+
+local noGravity = false
+MiscTab:AddToggle({
+    Name = "No Gravity",
+    Default = false,
+    Callback = function(Value)
+        noGravity = Value
+        if Value then
+            workspace.Gravity = 50 -- floaty
+        else
+            workspace.Gravity = defaultGravity
+        end
+    end
+})
+
+OrionLib:Init()                    task.wait(5)
                 end
             end)
         end
